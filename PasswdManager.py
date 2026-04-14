@@ -161,12 +161,81 @@ def view_passwords(username):
     pause()
 
 
-def generate_password():
+def delete_password(username):
+    if not os.path.exists(PASSWORD_FILE):
+        print("No passwords to delete.")
+        pause()
+        return
+
+    data = []
+
+    with open(PASSWORD_FILE, "r", encoding="utf-8") as file:
+        reader = csv.reader(file)
+        header = next(reader, None)
+
+        for row in reader:
+            if len(row) == 4:
+                data.append(row)
+
+    user_data = [row for row in data if row[0] == username]
+
+    if not user_data:
+        print("No passwords found.")
+        pause()
+        return
+
+    print("\n--- Select password to delete ---")
+
+    for i, row in enumerate(user_data):
+        _, site, login_user, _ = row
+        print(f"{i + 1}. {site} | {login_user}")
+
+    try:
+        choice = int(input("Select number: ")) - 1
+        to_delete = user_data[choice]
+    except:
+        print("Invalid choice.")
+        pause()
+        return
+
+    data.remove(to_delete)
+
+    with open(PASSWORD_FILE, "w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
+        writer.writerows(data)
+
+    print("Password deleted!")
+    pause()
+
+
+def generate_password(username):
     length = 12
     chars = string.ascii_letters + string.digits + "@#$%"
 
     password = "".join(random.choice(chars) for _ in range(length))
     print("Generated password:", password)
+
+    save = input("Do you want to save this password? (y/n): ").lower()
+
+    if save == "y":
+        site = input("Website: ").strip()
+        login_user = input("Login username: ").strip()
+
+        hashed = hash_password(password)
+
+        file_exists = os.path.exists(PASSWORD_FILE)
+
+        with open(PASSWORD_FILE, "a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+
+            if not file_exists:
+                writer.writerow(["username", "site", "login", "password"])
+
+            writer.writerow([username, site, login_user, hashed])
+
+        print("Password saved!")
+
     pause()
 
 
@@ -177,7 +246,8 @@ def user_menu(username):
         print("1. Save password")
         print("2. Show passwords")
         print("3. Generate password")
-        print("4. Sign out")
+        print("4. Delete password")
+        print("5. Sign out")
 
         choice = input("Choice: ")
 
@@ -188,9 +258,12 @@ def user_menu(username):
             view_passwords(username)
 
         elif choice == "3":
-            generate_password()
+            generate_password(username)
 
         elif choice == "4":
+            delete_password(username)
+
+        elif choice == "5":
             break
 
 
