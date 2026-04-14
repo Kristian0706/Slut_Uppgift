@@ -4,20 +4,20 @@ import random
 import string
 import hashlib
 
-# ===== FILE PATH (same folder as script) =====
+#  FILE PATH 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 LOGIN_FILE = os.path.join(BASE_DIR, "login.csv")
 PASSWORD_FILE = os.path.join(BASE_DIR, "hashedpasswd.csv")
 
-# ===== HASH FUNCTION =====
+#  HASH FUNCTION 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def pause():
     input("\nPress Enter to continue...")
 
-# ===== LOAD USERS =====
+#  LOAD USERS 
 def load_users():
     users = {}
 
@@ -54,7 +54,7 @@ def save_user(username, password):
         writer.writerow([username.strip(), password.strip()])
 
 
-# ===== REGISTER =====
+#  REGISTER 
 def register():
     username = input("Choose username: ").strip()
     password = input("Choose password: ").strip()
@@ -73,7 +73,7 @@ def register():
     pause()
 
 
-# ===== LOGIN =====
+#  LOGIN 
 def login():
     username = input("Username: ").strip()
     password = input("Password: ").strip()
@@ -88,13 +88,11 @@ def login():
     saved_password = users[username]
     hashed = hash_password(password)
 
-    # hashed match
     if saved_password == hashed:
         print("Login successful!")
         pause()
         return username
 
-    # old plaintext support
     elif saved_password == password:
         users[username] = hashed
         save_all_users(users)
@@ -109,7 +107,7 @@ def login():
         return None
 
 
-# ===== PASSWORD MANAGER =====
+#  PASSWORD MANAGER 
 def add_password(username):
     site = input("Website: ").strip()
     login_user = input("Login username: ").strip()
@@ -172,7 +170,7 @@ def generate_password():
     pause()
 
 
-# ===== USER MENU =====
+#  USER MENU 
 def user_menu(username):
     while True:
         print(f"\n--- Welcome {username} ---")
@@ -196,7 +194,7 @@ def user_menu(username):
             break
 
 
-# ===== MAIN =====
+#  MAIN 
 def main():
     while True:
         print("\n--- LOGIN SYSTEM ---")
