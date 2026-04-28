@@ -113,8 +113,6 @@ def add_password(username):
     login_user = input("Login username: ").strip()
     password = input("Password: ").strip()
 
-    hashed = hash_password(password)
-
     file_exists = os.path.exists(PASSWORD_FILE)
 
     with open(PASSWORD_FILE, "a", newline="", encoding="utf-8") as file:
@@ -123,7 +121,7 @@ def add_password(username):
         if not file_exists:
             writer.writerow(["username", "site", "login", "password"])
 
-        writer.writerow([username, site, login_user, hashed])
+        writer.writerow([username, site, login_user, password])
 
     print("Password saved!")
     pause()
@@ -222,8 +220,6 @@ def generate_password(username):
         site = input("Website: ").strip()
         login_user = input("Login username: ").strip()
 
-        hashed = hash_password(password)
-
         file_exists = os.path.exists(PASSWORD_FILE)
 
         with open(PASSWORD_FILE, "a", newline="", encoding="utf-8") as file:
@@ -232,7 +228,7 @@ def generate_password(username):
             if not file_exists:
                 writer.writerow(["username", "site", "login", "password"])
 
-            writer.writerow([username, site, login_user, hashed])
+            writer.writerow([username, site, login_user, password])
 
         print("Password saved!")
 
