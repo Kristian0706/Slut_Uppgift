@@ -4,7 +4,7 @@ import random
 import string
 import hashlib
 import customtkinter as ctk
-from tkinter import messagebox
+from datetime import datetime
 
 #  FILE PATH 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,6 +15,9 @@ PASSWORD_FILE = os.path.join(BASE_DIR, "hashedpasswd.csv")
 #  HASH FUNCTION 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+
+def get_time_stamp():
+    return datetime.now().strftime("%m-%d | %H:%M")
 
 def pause():
     input("\nPress Enter to continue...")
@@ -114,6 +117,7 @@ def add_password(username):
     site = input("Website: ").strip()
     login_user = input("Login username: ").strip()
     password = input("Password: ").strip()
+    created = get_time_stamp()
 
     file_exists = os.path.exists(PASSWORD_FILE)
 
@@ -121,9 +125,9 @@ def add_password(username):
         writer = csv.writer(file)
 
         if not file_exists:
-            writer.writerow(["username", "site", "login", "password"])
+            writer.writerow(["username", "site", "login", "password", "created"])
 
-        writer.writerow([username, site, login_user, password])
+        writer.writerow([username, site, login_user, password, created])
 
     print("Password saved!")
     pause()
@@ -143,6 +147,10 @@ def view_passwords(username):
 
         for row in reader:
             if len(row) == 4 and row[0] == username:
+                row.append("Unknown")
+                data.append(row)
+
+            elif len(row) == 5 and row[0] == username:
                 data.append(row)
 
     if not data:
@@ -164,8 +172,8 @@ def view_passwords(username):
     print("\n--- Your passwords ---")
 
     for row in data:
-        user, site, login_user, password = row
-        print(f"{site} | {login_user} | {password}")
+        user, site, login_user, password, created = row
+        print(f"{site} | {login_user} | {password} | {created}")
 
     pause()
 
@@ -184,6 +192,10 @@ def delete_password(username):
 
         for row in reader:
             if len(row) == 4:
+                row.append("Unknown")
+                data.append(row)
+
+            elif len(row) == 5:
                 data.append(row)
 
     user_data = [row for row in data if row[0] == username]
@@ -196,8 +208,8 @@ def delete_password(username):
     print("\n--- Select password to delete ---")
 
     for i, row in enumerate(user_data):
-        _, site, login_user, _ = row
-        print(f"{i + 1}. {site} | {login_user}")
+        _, site, login_user, _, created = row
+        print(f"{i + 1}. {site} | {login_user} | {created}")
 
     try:
         choice = int(input("Select number: ")) - 1
@@ -211,7 +223,7 @@ def delete_password(username):
 
     with open(PASSWORD_FILE, "w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
-        writer.writerow(header)
+        writer.writerow(["username", "site", "login", "password", "created"])
         writer.writerows(data)
 
     print("Password deleted!")
@@ -230,6 +242,7 @@ def generate_password(username):
     if save == "y":
         site = input("Website: ").strip()
         login_user = input("Login username: ").strip()
+        created = get_time_stamp()
 
         file_exists = os.path.exists(PASSWORD_FILE)
 
@@ -237,9 +250,9 @@ def generate_password(username):
             writer = csv.writer(file)
 
             if not file_exists:
-                writer.writerow(["username", "site", "login", "password"])
+                writer.writerow(["username", "site", "login", "password", "created"])
 
-            writer.writerow([username, site, login_user, password])
+            writer.writerow([username, site, login_user, password, created])
 
         print("Password saved!")
 
@@ -312,6 +325,113 @@ class PasswordManagerGUI(ctk.CTk):
         self.container.grid_rowconfigure(0, weight=1)
 
         self.show_login_screen()
+
+    def luxury_popup(self, title, message, popup_type="info", question=False):
+        result = {"value": False}
+
+        popup = ctk.CTkToplevel(self)
+        popup.title(title)
+        popup.geometry("520x280")
+        popup.resizable(False, False)
+        popup.configure(fg_color=self.bg)
+        popup.transient(self)
+        popup.grab_set()
+
+        self.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() // 2) - 260
+        y = self.winfo_y() + (self.winfo_height() // 2) - 140
+        popup.geometry(f"520x280+{x}+{y}")
+
+        if popup_type == "success":
+            icon = "✓"
+            icon_color = self.green
+        elif popup_type == "error":
+            icon = "!"
+            icon_color = self.red
+        elif popup_type == "warning":
+            icon = "?"
+            icon_color = self.accent2
+        else:
+            icon = "i"
+            icon_color = self.accent
+
+        outer = ctk.CTkFrame(popup, fg_color=self.bg, corner_radius=0)
+        outer.pack(fill="both", expand=True, padx=18, pady=18)
+
+        card = ctk.CTkFrame(outer, fg_color=self.card, corner_radius=26, border_width=1, border_color="#243044")
+        card.pack(fill="both", expand=True)
+
+        top = ctk.CTkFrame(card, fg_color="transparent")
+        top.pack(fill="x", padx=26, pady=(24, 10))
+
+        icon_frame = ctk.CTkFrame(top, width=56, height=56, fg_color=icon_color, corner_radius=18)
+        icon_frame.pack(side="left")
+        icon_frame.pack_propagate(False)
+
+        ctk.CTkLabel(icon_frame, text=icon, font=("Segoe UI", 30, "bold"), text_color="white").pack(expand=True)
+
+        text_frame = ctk.CTkFrame(top, fg_color="transparent")
+        text_frame.pack(side="left", fill="x", expand=True, padx=(18, 0))
+
+        ctk.CTkLabel(text_frame, text=title, font=("Segoe UI", 22, "bold"), text_color=self.text).pack(anchor="w")
+        ctk.CTkLabel(text_frame, text=message, font=("Segoe UI", 14), text_color=self.muted, wraplength=360, justify="left").pack(anchor="w", pady=(6, 0))
+
+        button_frame = ctk.CTkFrame(card, fg_color="transparent")
+        button_frame.pack(side="bottom", fill="x", padx=26, pady=(10, 24))
+
+        def yes_action():
+            result["value"] = True
+            popup.destroy()
+
+        def no_action():
+            result["value"] = False
+            popup.destroy()
+
+        if question:
+            ctk.CTkButton(
+                button_frame,
+                text="Cancel",
+                height=44,
+                corner_radius=14,
+                fg_color="#1E293B",
+                hover_color="#334155",
+                font=("Segoe UI", 14, "bold"),
+                command=no_action
+            ).pack(side="right", padx=(10, 0))
+
+            ctk.CTkButton(
+                button_frame,
+                text="Continue",
+                height=44,
+                corner_radius=14,
+                fg_color=self.accent,
+                hover_color="#6D28D9",
+                font=("Segoe UI", 14, "bold"),
+                command=yes_action
+            ).pack(side="right")
+        else:
+            ctk.CTkButton(
+                button_frame,
+                text="OK",
+                height=44,
+                corner_radius=14,
+                fg_color=self.accent,
+                hover_color="#6D28D9",
+                font=("Segoe UI", 14, "bold"),
+                command=yes_action
+            ).pack(side="right")
+
+        self.wait_window(popup)
+        return result["value"]
+
+    def show_error(self, title, message):
+        self.luxury_popup(title, message, "error")
+
+    def show_success(self, title, message):
+        self.luxury_popup(title, message, "success")
+
+    def ask_warning(self, title, message):
+        return self.luxury_popup(title, message, "warning", True)
 
     def clear_screen(self):
         for widget in self.container.winfo_children():
@@ -564,19 +684,19 @@ class PasswordManagerGUI(ctk.CTk):
         password = self.register_password.get().strip()
 
         if username == "" or password == "":
-            messagebox.showerror("Error", "Username and password cannot be empty.")
+            self.show_error("Missing information", "Username and password cannot be empty.")
             return
 
         users = load_users()
 
         if username in users:
-            messagebox.showerror("Error", "Username already exists!")
+            self.show_error("Account exists", "Username already exists.")
             return
 
         hashed = hash_password(password)
         save_user(username, hashed)
 
-        messagebox.showinfo("Success", "Account created!")
+        self.show_success("Account created", "Your account has been created successfully.")
         self.show_login_screen()
 
     def gui_login(self):
@@ -586,7 +706,7 @@ class PasswordManagerGUI(ctk.CTk):
         users = load_users()
 
         if username not in users:
-            messagebox.showerror("Error", "Wrong login")
+            self.show_error("Wrong login", "Username or password is incorrect.")
             return
 
         saved_password = users[username]
@@ -605,15 +725,16 @@ class PasswordManagerGUI(ctk.CTk):
             self.show_dashboard()
 
         else:
-            messagebox.showerror("Error", "Wrong login")
+            self.show_error("Wrong login", "Username or password is incorrect.")
 
     def gui_add_password(self):
         site = self.site_entry.get().strip()
         login_user = self.login_entry.get().strip()
         password = self.password_entry.get().strip()
+        created = get_time_stamp()
 
         if site == "" or login_user == "" or password == "":
-            messagebox.showerror("Error", "Fill in all fields.")
+            self.show_error("Missing information", "Fill in all fields before saving.")
             return
 
         file_exists = os.path.exists(PASSWORD_FILE)
@@ -622,16 +743,16 @@ class PasswordManagerGUI(ctk.CTk):
             writer = csv.writer(file)
 
             if not file_exists:
-                writer.writerow(["username", "site", "login", "password"])
+                writer.writerow(["username", "site", "login", "password", "created"])
 
-            writer.writerow([self.current_user, site, login_user, password])
+            writer.writerow([self.current_user, site, login_user, password, created])
 
         self.site_entry.delete(0, "end")
         self.login_entry.delete(0, "end")
         self.password_entry.delete(0, "end")
         self.generated_label.configure(text="")
 
-        messagebox.showinfo("Success", "Password saved!")
+        self.show_success("Password saved", "Your password has been saved successfully.")
         self.load_password_cards()
 
     def get_user_passwords(self):
@@ -640,13 +761,29 @@ class PasswordManagerGUI(ctk.CTk):
         if not os.path.exists(PASSWORD_FILE):
             return data
 
+        changed = False
+        all_rows = []
+
         with open(PASSWORD_FILE, "r", encoding="utf-8") as file:
             reader = csv.reader(file)
-            next(reader, None)
+            header = next(reader, None)
 
             for row in reader:
-                if len(row) == 4 and row[0] == self.current_user:
-                    data.append(row)
+                if len(row) == 4:
+                    row.append("Unknown")
+                    changed = True
+
+                if len(row) == 5:
+                    all_rows.append(row)
+
+                    if row[0] == self.current_user:
+                        data.append(row)
+
+        if changed:
+            with open(PASSWORD_FILE, "w", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+                writer.writerow(["username", "site", "login", "password", "created"])
+                writer.writerows(all_rows)
 
         data.sort(key=lambda row: row[1])
         return data
@@ -663,8 +800,8 @@ class PasswordManagerGUI(ctk.CTk):
             return
 
         for i, row in enumerate(data):
-            user, site, login_user, password = row
-            key = f"{site}|{login_user}|{password}"
+            user, site, login_user, password, created = row
+            key = f"{site}|{login_user}|{password}|{created}"
             is_visible = key in self.visible_passwords
 
             card = ctk.CTkFrame(self.password_list, fg_color=self.card2, corner_radius=16)
@@ -673,17 +810,18 @@ class PasswordManagerGUI(ctk.CTk):
 
             ctk.CTkLabel(card, text=site, font=("Segoe UI", 17, "bold"), text_color=self.text).grid(row=0, column=0, sticky="w", padx=18, pady=(14, 0))
             ctk.CTkLabel(card, text=f"Login: {login_user}", font=("Segoe UI", 13), text_color=self.muted).grid(row=1, column=0, sticky="w", padx=18, pady=(2, 0))
+            ctk.CTkLabel(card, text=f"Saved: {created}", font=("Segoe UI", 12, "bold"), text_color=self.green).grid(row=2, column=0, sticky="w", padx=18, pady=(2, 0))
 
             shown_password = password if is_visible else "••••••••••••"
             password_label = ctk.CTkLabel(card, text=f"Password: {shown_password}", font=("Segoe UI", 13, "bold"), text_color=self.accent2, cursor="hand2")
-            password_label.grid(row=2, column=0, sticky="w", padx=18, pady=(2, 14))
+            password_label.grid(row=3, column=0, sticky="w", padx=18, pady=(2, 14))
             password_label.bind("<Button-1>", lambda event, r=row: self.toggle_password_visibility(r))
 
-            ctk.CTkButton(card, text="Select", width=90, height=34, corner_radius=10, fg_color=self.accent, hover_color="#6D28D9", command=lambda r=row: self.select_password(r)).grid(row=0, column=1, rowspan=3, padx=15, pady=15)
+            ctk.CTkButton(card, text="Select", width=90, height=34, corner_radius=10, fg_color=self.accent, hover_color="#6D28D9", command=lambda r=row: self.select_password(r)).grid(row=0, column=1, rowspan=4, padx=15, pady=15)
 
     def toggle_password_visibility(self, row):
-        user, site, login_user, password = row
-        key = f"{site}|{login_user}|{password}"
+        user, site, login_user, password, created = row
+        key = f"{site}|{login_user}|{password}|{created}"
 
         if key in self.visible_passwords:
             self.visible_passwords.remove(key)
@@ -691,7 +829,7 @@ class PasswordManagerGUI(ctk.CTk):
             self.load_password_cards()
             return
 
-        confirm = messagebox.askyesno("Security warning", "Make sure nobody is looking at your screen before viewing your password.\n\nDo you want to continue?")
+        confirm = self.ask_warning("Security warning", "Make sure nobody is looking at your screen before viewing your password.")
 
         if confirm:
             self.visible_passwords.add(key)
@@ -700,19 +838,20 @@ class PasswordManagerGUI(ctk.CTk):
 
     def select_password(self, row):
         self.selected_password = row
-        messagebox.showinfo("Selected", f"Selected password:\n{row[1]} | {row[2]}")
+        self.show_success("Password selected", f"{row[1]} | {row[2]} is now selected.")
 
     def gui_delete_password(self):
         if self.selected_password is None:
-            messagebox.showerror("Error", "Select a password first.")
+            self.show_error("No password selected", "Select a password before deleting.")
             return
 
-        confirm = messagebox.askyesno("Delete password", f"Do you want to delete:\n{self.selected_password[1]} | {self.selected_password[2]}?")
+        confirm = self.ask_warning("Delete password", f"Do you want to delete {self.selected_password[1]} | {self.selected_password[2]}?")
+
         if not confirm:
             return
 
         if not os.path.exists(PASSWORD_FILE):
-            messagebox.showerror("Error", "No passwords to delete.")
+            self.show_error("Nothing to delete", "No passwords were found.")
             return
 
         data = []
@@ -723,23 +862,26 @@ class PasswordManagerGUI(ctk.CTk):
 
             for row in reader:
                 if len(row) == 4:
+                    row.append("Unknown")
+
+                if len(row) == 5:
                     data.append(row)
 
         if self.selected_password in data:
             data.remove(self.selected_password)
 
-        selected_key = f"{self.selected_password[1]}|{self.selected_password[2]}|{self.selected_password[3]}"
+        selected_key = f"{self.selected_password[1]}|{self.selected_password[2]}|{self.selected_password[3]}|{self.selected_password[4]}"
 
         if selected_key in self.visible_passwords:
             self.visible_passwords.remove(selected_key)
 
         with open(PASSWORD_FILE, "w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
-            writer.writerow(header if header else ["username", "site", "login", "password"])
+            writer.writerow(["username", "site", "login", "password", "created"])
             writer.writerows(data)
 
         self.selected_password = None
-        messagebox.showinfo("Success", "Password deleted!")
+        self.show_success("Password deleted", "The selected password has been deleted.")
         self.load_password_cards()
 
     def gui_generate_password(self):
@@ -751,7 +893,7 @@ class PasswordManagerGUI(ctk.CTk):
         self.password_entry.delete(0, "end")
         self.password_entry.insert(0, password)
 
-        save = messagebox.askyesno("Generated password", f"Generated password:\n{password}\n\nDo you want to save this password now?")
+        save = self.ask_warning("Generated password", f"Generated password:\n{password}\n\nDo you want to save this password now?")
 
         if save:
             self.focus_save_form()
