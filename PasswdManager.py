@@ -449,7 +449,7 @@ class PasswordManagerGUI(ctk.CTk):
         left = ctk.CTkFrame(frame, fg_color=self.bg, corner_radius=0)
         left.grid(row=0, column=0, sticky="nsew", padx=(45, 20), pady=35)
 
-        ctk.CTkLabel(left, text="PASSWD", font=("Segoe UI", 42, "bold"), text_color=self.text).pack(anchor="w", pady=(55, 0))
+        ctk.CTkLabel(left, text="PASSWORD", font=("Segoe UI", 42, "bold"), text_color=self.text).pack(anchor="w", pady=(55, 0))
         ctk.CTkLabel(left, text="MANAGER", font=("Segoe UI", 42, "bold"), text_color=self.accent2).pack(anchor="w", pady=(0, 20))
 
         ctk.CTkLabel(
